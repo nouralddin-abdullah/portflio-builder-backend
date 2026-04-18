@@ -4,6 +4,8 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AppConfigService } from './config/config.service';
 import { initSentry } from './common/observability/sentry';
+import { setupMetrics } from './common/observability/metrics';
+import { setupOpenApi } from './common/openapi/setup';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { SerializationInterceptor } from './common/interceptors/serialization.interceptor';
 import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
@@ -25,15 +27,21 @@ async function bootstrap() {
     allowedHeaders: ['authorization', 'content-type', 'x-request-id'],
   });
 
-  app.setGlobalPrefix('api', { exclude: ['healthz', 'readyz', 'metrics'] });
+  app.setGlobalPrefix('api', { exclude: ['healthz', 'readyz', 'metrics', 'docs', 'docs-json'] });
   app.useGlobalFilters(new AllExceptionsFilter(logger));
   app.useGlobalInterceptors(new SerializationInterceptor());
   app.useGlobalPipes(new ZodValidationPipe());
+
+  setupMetrics(app);
+  setupOpenApi(app);
 
   app.enableShutdownHooks();
 
   await app.listen(config.port, '0.0.0.0');
   logger.log(`Portfoli backend listening on :${config.port}`, 'Bootstrap');
+  if (config.openapiEnabled) {
+    logger.log(`API docs at ${config.apiOrigin}/docs`, 'Bootstrap');
+  }
 }
 
 bootstrap().catch((err) => {
