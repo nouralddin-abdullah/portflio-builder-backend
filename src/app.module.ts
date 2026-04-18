@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { PortfoliosModule } from './modules/portfolios/portfolios.module';
+import { AssetsModule } from './modules/assets/assets.module';
 import { EventsModule } from './common/events/events.module';
 
 @Module({
@@ -59,6 +60,7 @@ import { EventsModule } from './common/events/events.module';
     UsersModule,
     TenantsModule,
     PortfoliosModule,
+    AssetsModule,
     EventsModule,
   ],
 })
