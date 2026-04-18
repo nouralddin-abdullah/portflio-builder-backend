@@ -10,6 +10,8 @@ import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { PortfoliosModule } from './modules/portfolios/portfolios.module';
+import { EventsModule } from './common/events/events.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     AuthModule,
     UsersModule,
     TenantsModule,
+    PortfoliosModule,
+    EventsModule,
   ],
 })
 export class AppModule {}
