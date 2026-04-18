@@ -9,6 +9,7 @@ import { RedisModule } from './common/redis/redis.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { TenantsModule } from './modules/tenants/tenants.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { UsersModule } from './modules/users/users.module';
     RateLimitModule,
     AuthModule,
     UsersModule,
+    TenantsModule,
   ],
 })
 export class AppModule {}
