@@ -30,6 +30,7 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
   APP_ORIGIN: z.string().url(),
+  API_ORIGIN: z.string().url().default('http://localhost:4000'),
   RENDER_ORIGIN_SUFFIX: z.string().regex(/^\.[a-z0-9.-]+$/i, 'must start with a dot'),
 
   DATABASE_URL: z.string().url(),

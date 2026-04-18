@@ -29,6 +29,10 @@ export class AppConfigService {
     return this.env.APP_ORIGIN;
   }
 
+  get apiOrigin(): string {
+    return this.env.API_ORIGIN;
+  }
+
   get renderOriginSuffix(): string {
     return this.env.RENDER_ORIGIN_SUFFIX;
   }
