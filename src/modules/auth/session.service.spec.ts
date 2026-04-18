@@ -13,24 +13,34 @@ import type { TokenService } from './jwt.service';
 function makeRepo() {
   const rows = new Map<string, Session>();
 
-  const qb = {
-    _where: {} as Record<string, unknown>,
-    _ids: [] as string[],
-    update(): typeof qb {
+  interface Qb {
+    _where: Record<string, unknown>;
+    _ids: string[];
+    update(): Qb;
+    set(): Qb;
+    where(clause: string, params: Record<string, unknown>): Qb;
+    andWhere(clause: string, params?: Record<string, unknown>): Qb;
+    whereInIds(ids: string[]): Qb;
+    execute(): Promise<{ affected: number }>;
+  }
+  const qb: Qb = {
+    _where: {},
+    _ids: [],
+    update(): Qb {
       return qb;
     },
-    set(): typeof qb {
+    set(): Qb {
       return qb;
     },
-    where(clause: string, params: Record<string, unknown>): typeof qb {
+    where(clause: string, params: Record<string, unknown>): Qb {
       qb._where = { ...qb._where, ...params };
       return qb;
     },
-    andWhere(clause: string, params?: Record<string, unknown>): typeof qb {
+    andWhere(clause: string, params?: Record<string, unknown>): Qb {
       if (params) qb._where = { ...qb._where, ...params };
       return qb;
     },
-    whereInIds(ids: string[]): typeof qb {
+    whereInIds(ids: string[]): Qb {
       qb._ids = ids;
       return qb;
     },
@@ -77,7 +87,7 @@ function makeRepo() {
     async delete(): Promise<{ affected: number }> {
       return { affected: 0 };
     },
-    createQueryBuilder(): typeof qb {
+    createQueryBuilder(): Qb {
       return qb;
     },
     _rows: rows,

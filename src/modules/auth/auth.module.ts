@@ -20,6 +20,6 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     SessionService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
-  exports: [AuthService, TokenService, SessionService],
+  exports: [AuthService, TokenService, SessionService, PasswordService],
 })
 export class AuthModule {}

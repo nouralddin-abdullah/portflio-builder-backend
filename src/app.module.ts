@@ -8,6 +8,7 @@ import { HealthModule } from './modules/health/health.module';
 import { RedisModule } from './common/redis/redis.module';
 import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { AuthModule } from './modules/auth/auth.module';
     RedisModule,
     RateLimitModule,
     AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
