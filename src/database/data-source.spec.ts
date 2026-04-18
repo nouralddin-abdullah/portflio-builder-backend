@@ -14,7 +14,7 @@ describe('AppDataSource metadata', () => {
       entities: [...ALL_ENTITIES],
       synchronize: false,
     });
-    await ds.buildMetadatas();
+    await (ds as unknown as { buildMetadatas: () => Promise<void> }).buildMetadatas();
     const names = ds.entityMetadatas.map((m) => m.tableName).sort();
     expect(names).toContain('users');
     expect(names).toContain('tenants');
@@ -34,7 +34,7 @@ describe('AppDataSource metadata', () => {
       entities: [...ALL_ENTITIES],
       synchronize: false,
     });
-    await ds.buildMetadatas();
+    await (ds as unknown as { buildMetadatas: () => Promise<void> }).buildMetadatas();
     const user = ds.entityMetadatas.find((m) => m.tableName === 'users');
     expect(user).toBeDefined();
     const createdAt = user!.columns.find((c) => c.propertyName === 'createdAt');

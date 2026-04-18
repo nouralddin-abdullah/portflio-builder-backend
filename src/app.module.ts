@@ -5,6 +5,9 @@ import { AppConfigModule } from './config/config.module';
 import { AppConfigService } from './config/config.service';
 import { DatabaseModule } from './database/typeorm.module';
 import { HealthModule } from './modules/health/health.module';
+import { RedisModule } from './common/redis/redis.module';
+import { RateLimitModule } from './common/rate-limit/rate-limit.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -46,6 +49,9 @@ import { HealthModule } from './modules/health/health.module';
     }),
     HealthModule,
     DatabaseModule,
+    RedisModule,
+    RateLimitModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
