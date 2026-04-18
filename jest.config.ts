@@ -7,8 +7,13 @@ const config: Config = {
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json', isolatedModules: true }],
+    '^.+\\.(t|j)s$': ['ts-jest', { tsconfig: 'tsconfig.json', isolatedModules: true }],
   },
+  transformIgnorePatterns: [
+    // cuid2 (via @noble/hashes) ships ESM — let ts-jest transpile it.
+    // pnpm realpaths live under .pnpm/@scope+name@version/node_modules/...
+    'node_modules/(?!(\\.pnpm/)?@paralleldrive|(\\.pnpm/)?@noble).+\\.js$',
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
