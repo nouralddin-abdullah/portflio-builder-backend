@@ -6,6 +6,7 @@ import type { User } from '../../database/entities/user.entity';
 import type { VerificationToken } from '../../database/entities/verification-token.entity';
 import type { PasswordService } from '../auth/password.service';
 import type { SessionService } from '../auth/session.service';
+import type { EventBus } from '../../common/events/event-bus.service';
 
 function makeUserRepo(seed: User[] = []) {
   const rows = new Map<string, User>(seed.map((u) => [u.id, u]));
@@ -98,13 +99,18 @@ function seedUser(overrides: Partial<User> = {}): User {
   } as User;
 }
 
-function build(userRepo: ReturnType<typeof makeUserRepo>, verifyRepo: ReturnType<typeof makeVerificationRepo>, passwords: PasswordService, sessions: ReturnType<typeof makeSessionSvc>, redis: ReturnType<typeof makeRedis>) {
+function makeEventBus(): EventBus & { emit: jest.Mock } {
+  return { emit: jest.fn(), on: jest.fn() } as unknown as EventBus & { emit: jest.Mock };
+}
+
+function build(userRepo: ReturnType<typeof makeUserRepo>, verifyRepo: ReturnType<typeof makeVerificationRepo>, passwords: PasswordService, sessions: ReturnType<typeof makeSessionSvc>, redis: ReturnType<typeof makeRedis>, events: EventBus = makeEventBus()) {
   return new UsersService(
     userRepo as unknown as Repository<User>,
     verifyRepo as unknown as Repository<VerificationToken>,
     passwords,
     sessions as unknown as SessionService,
     redis as unknown as Redis,
+    events,
   );
 }
 

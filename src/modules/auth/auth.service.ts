@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../database/entities/user.entity';
+import { EventBus } from '../../common/events/event-bus.service';
 import { PasswordService } from './password.service';
 import { SessionService, type IssuedTokens } from './session.service';
 import type { LoginInput, RegisterInput } from './schemas';
@@ -32,6 +33,7 @@ export class AuthService {
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
+    private readonly events: EventBus,
   ) {}
 
   async register(input: RegisterInput, ctx: RequestContext): Promise<AuthResponse> {
@@ -54,6 +56,8 @@ export class AuthService {
       emailVerifiedAt: null,
     });
     await this.users.save(user);
+
+    this.events.emit('user.registered', { userId: user.id });
 
     const tokens = await this.sessions.issue(user.id, ctx);
     return { ...tokens, user: this.toPublic(user) };

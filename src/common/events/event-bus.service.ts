@@ -16,6 +16,8 @@ export interface AppEvents {
   'inquiry.received': { tenantId: string; inquiryId: string };
   'asset.uploaded': { assetId: string };
   'asset.deleted': { assetId: string };
+  'user.registered': { userId: string };
+  'user.email_change_requested': { userId: string; tokenId: string; newEmail: string; rawToken: string };
 }
 
 type Handler<K extends keyof AppEvents> = (payload: AppEvents[K]) => void | Promise<void>;

@@ -17,6 +17,7 @@ import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { DomainsModule } from './modules/domains/domains.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { OAuthModule } from './modules/oauth/oauth.module';
+import { AccountModule } from './modules/account/account.module';
 import { EventsModule } from './common/events/events.module';
 
 @Module({
@@ -71,6 +72,7 @@ import { EventsModule } from './common/events/events.module';
     DomainsModule,
     AnalyticsModule,
     OAuthModule,
+    AccountModule,
     EventsModule,
   ],
 })

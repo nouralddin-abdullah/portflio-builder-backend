@@ -16,6 +16,7 @@ import { VerificationToken } from '../../database/entities/verification-token.en
 import { PasswordService } from '../auth/password.service';
 import { SessionService } from '../auth/session.service';
 import { REDIS } from '../../common/redis/redis.module';
+import { EventBus } from '../../common/events/event-bus.service';
 import type {
   EmailChangeInput,
   PasswordChangeInput,
@@ -47,6 +48,7 @@ export class UsersService {
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
     @Inject(REDIS) private readonly redis: Redis,
+    private readonly events: EventBus,
   ) {}
 
   async getProfile(userId: string): Promise<UserProfile> {
@@ -111,7 +113,12 @@ export class UsersService {
     );
 
     this.logger.log({ msg: 'email_change_requested', userId, tokenId: row.id });
-    // NOTE: mail dispatch handled in T13 (verification + password reset flows).
+    this.events.emit('user.email_change_requested', {
+      userId,
+      tokenId: row.id,
+      newEmail,
+      rawToken,
+    });
   }
 
   /**
