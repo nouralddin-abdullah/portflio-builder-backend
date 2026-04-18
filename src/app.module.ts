@@ -13,6 +13,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
 import { PortfoliosModule } from './modules/portfolios/portfolios.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { PublicModule } from './modules/public/public.module';
+import { InquiriesModule } from './modules/inquiries/inquiries.module';
 import { EventsModule } from './common/events/events.module';
 
 @Module({
@@ -63,6 +64,7 @@ import { EventsModule } from './common/events/events.module';
     PortfoliosModule,
     AssetsModule,
     PublicModule,
+    InquiriesModule,
     EventsModule,
   ],
 })
