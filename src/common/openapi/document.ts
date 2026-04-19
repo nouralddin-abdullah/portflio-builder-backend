@@ -137,12 +137,16 @@ const SCHEMAS: Record<string, JsonSchema> = {
   },
   Tenant: {
     type: 'object',
-    required: ['id', 'ownerId', 'subdomain', 'createdAt'],
+    required: ['id', 'ownerId', 'subdomain', 'onboardedAt', 'createdAt'],
     properties: {
       id: { type: 'string' },
       ownerId: { type: 'string' },
       subdomain: { type: 'string' },
+      customDomain: { type: ['string', 'null'] },
+      status: { type: 'string', enum: ['draft', 'published', 'archived'] },
+      onboardedAt: { type: ['string', 'null'], format: 'date-time' },
       createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
     },
   },
   PortfolioSummary: {

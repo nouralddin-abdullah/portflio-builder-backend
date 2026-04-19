@@ -7,40 +7,59 @@ import { z } from 'zod';
  * optional fields and strict on shape keys so unknown fields are rejected.
  */
 
-const trimmedString = (max: number) => z.string().trim().min(1).max(max);
-const optionalUrl = z.string().url().max(2048).optional();
-const optionalPlainText = (max: number) => z.string().trim().max(max).optional();
+const optionalUrlOrEmpty = z.union([z.string().url().max(2048), z.literal('')]).optional();
+const optionalPlainText = (max: number) =>
+  z.union([z.string().trim().max(max), z.literal('')]).optional();
 
 export const heroSchema = z
   .object({
-    title: trimmedString(120),
-    subtitle: optionalPlainText(200),
-    ctaLabel: optionalPlainText(40),
-    ctaUrl: optionalUrl,
-    avatarAssetId: z.string().max(32).optional(),
+    portraitUrl: z.union([z.string().max(2048), z.literal('')]).optional(),
+    tagline: optionalPlainText(60),
+    headline: z.string().trim().min(3).max(140),
+    subheadline: z.string().trim().max(300),
+    ctaLabel: optionalPlainText(32),
+    ctaHref: optionalUrlOrEmpty,
+    availability: z.enum(['available', 'limited', 'closed']),
   })
   .strict();
 export type HeroSection = z.infer<typeof heroSchema>;
 
 export const aboutSchema = z
   .object({
-    body: z.string().trim().min(1).max(4_000),
-    skills: z.array(trimmedString(40)).max(40).optional(),
+    body: z.string().trim().min(1).max(4000),
+    skills: z.array(z.string().trim().min(1).max(40)).max(20),
+    resumeUrl: optionalUrlOrEmpty,
   })
   .strict();
 export type AboutSection = z.infer<typeof aboutSchema>;
 
+const MEDIA_KINDS = ['none', 'image', 'video'] as const;
+
 const projectItemSchema = z
   .object({
     id: z.string().min(1).max(32),
-    title: trimmedString(120),
-    summary: optionalPlainText(600),
-    url: optionalUrl,
-    repoUrl: optionalUrl,
-    imageAssetId: z.string().max(32).optional(),
-    tags: z.array(trimmedString(30)).max(20).optional(),
+    title: z.string().trim().min(1).max(120),
+    summary: z.union([z.string().trim().max(400), z.literal('')]),
+    role: optionalPlainText(80),
+    client: optionalPlainText(80),
+    year: z.string().trim().regex(/^\d{4}$/),
+    url: optionalUrlOrEmpty,
+    mediaKind: z.enum(MEDIA_KINDS),
+    mediaUrl: optionalUrlOrEmpty,
+    mediaAlt: optionalPlainText(160),
+    tags: z.array(z.string().trim().min(1).max(30)).max(10),
+    bullets: z.array(z.string().trim().min(1).max(240)).max(8).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((item, ctx) => {
+    if (item.mediaKind !== 'none' && !item.mediaUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['mediaUrl'],
+        message: 'Add a URL or set media to None',
+      });
+    }
+  });
 
 export const projectsSchema = z
   .object({
@@ -52,18 +71,16 @@ export type ProjectsSection = z.infer<typeof projectsSchema>;
 const experienceItemSchema = z
   .object({
     id: z.string().min(1).max(32),
-    role: trimmedString(120),
-    company: trimmedString(120),
-    location: optionalPlainText(120),
-    startDate: z.string().regex(/^\d{4}-\d{2}$/, 'startDate must be YYYY-MM'),
-    endDate: z.string().regex(/^\d{4}-\d{2}$/, 'endDate must be YYYY-MM').optional(),
-    summary: optionalPlainText(800),
+    company: z.string().trim().min(1).max(120),
+    role: z.string().trim().min(1).max(120),
+    location: optionalPlainText(80),
+    start: z.string().trim().min(1).max(40),
+    end: z.string().trim().min(1).max(40),
+    current: z.boolean(),
+    summary: z.union([z.string().trim().max(500), z.literal('')]),
+    highlights: z.array(z.string().trim().min(1).max(240)).max(8),
   })
-  .strict()
-  .refine(
-    (v) => !v.endDate || v.endDate >= v.startDate,
-    { message: 'endDate must not precede startDate', path: ['endDate'] },
-  );
+  .strict();
 
 export const experienceSchema = z
   .object({
@@ -75,38 +92,83 @@ export type ExperienceSection = z.infer<typeof experienceSchema>;
 const educationItemSchema = z
   .object({
     id: z.string().min(1).max(32),
-    institution: trimmedString(160),
-    degree: optionalPlainText(120),
-    field: optionalPlainText(120),
-    startYear: z.number().int().min(1900).max(2100),
-    endYear: z.number().int().min(1900).max(2100).optional(),
+    institution: z.string().trim().min(1).max(160),
+    credential: z.string().trim().min(1).max(160),
+    startYear: z.string().trim().regex(/^\d{4}$/),
+    endYear: z.union([z.string().trim().regex(/^\d{4}$/), z.literal('')]),
+    gpa: z.union([z.string().trim().regex(/^(\d(\.\d{1,2})?|)$/u), z.literal('')]).optional(),
+    note: optionalPlainText(240),
   })
-  .strict()
-  .refine(
-    (v) => !v.endYear || v.endYear >= v.startYear,
-    { message: 'endYear must not precede startYear', path: ['endYear'] },
-  );
+  .strict();
 
 export const educationSchema = z
   .object({
-    items: z.array(educationItemSchema).max(10),
+    items: z.array(educationItemSchema).max(20),
   })
   .strict();
 export type EducationSection = z.infer<typeof educationSchema>;
 
-const contactSocialSchema = z
+const LINK_PLATFORMS = [
+  'website',
+  'email',
+  'github',
+  'gitlab',
+  'linkedin',
+  'twitter',
+  'bluesky',
+  'mastodon',
+  'instagram',
+  'dribbble',
+  'behance',
+  'figma',
+  'youtube',
+  'vimeo',
+  'medium',
+  'substack',
+  'spotify',
+  'custom',
+] as const;
+
+const contactLinkSchema = z
   .object({
-    platform: z.enum(['github', 'linkedin', 'x', 'mastodon', 'bluesky', 'dribbble', 'website']),
-    url: z.string().url().max(2048),
+    id: z.string().min(1).max(32),
+    platform: z.enum(LINK_PLATFORMS),
+    label: z.union([z.string().trim().max(40), z.literal('')]),
+    href: z.string().trim().min(1).max(2048),
   })
-  .strict();
+  .strict()
+  .superRefine((link, ctx) => {
+    if (link.platform === 'email') {
+      const ok = z.string().email().safeParse(link.href).success;
+      if (!ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['href'], message: 'Enter an email address' });
+      }
+      return;
+    }
+    const ok = z.string().url().safeParse(link.href).success;
+    if (!ok) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['href'], message: 'Enter a full URL' });
+    }
+  });
+
+const phoneField = z
+  .union([
+    z
+      .string()
+      .trim()
+      .max(32)
+      .regex(/^[+\d][\d\s\-().]*$/u),
+    z.literal(''),
+  ])
+  .optional();
 
 export const contactSchema = z
   .object({
-    email: z.string().email().max(254).optional(),
-    phone: z.string().trim().max(40).optional(),
-    location: optionalPlainText(120),
-    socials: z.array(contactSocialSchema).max(8).optional(),
+    email: z.union([z.string().email().max(254), z.literal('')]),
+    phone: phoneField,
+    location: optionalPlainText(80),
+    links: z.array(contactLinkSchema).max(20),
+    allowInquiryForm: z.boolean(),
   })
   .strict();
 export type ContactSection = z.infer<typeof contactSchema>;

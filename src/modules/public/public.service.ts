@@ -128,11 +128,16 @@ export class PublicService {
   private async findTenantByHost(rawHost: string): Promise<Tenant | null> {
     const host = rawHost.trim().toLowerCase();
     const renderSuffix = this.config.renderOriginSuffix.toLowerCase(); // e.g. ".portfoli.app"
-    if (host.endsWith(renderSuffix)) {
+    if (renderSuffix && host.endsWith(renderSuffix)) {
       const subdomain = host.slice(0, -renderSuffix.length);
       if (subdomain.length > 0) {
         return this.tenants.findOne({ where: { subdomain } });
       }
+    }
+    // Local-dev / preview fallback: accept a bare subdomain token when the
+    // caller has no configured rendering origin and the host contains no dots.
+    if (!host.includes('.') && host.length > 0) {
+      return this.tenants.findOne({ where: { subdomain: host } });
     }
     return this.tenants.findOne({ where: { customDomain: host } });
   }

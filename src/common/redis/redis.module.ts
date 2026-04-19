@@ -14,7 +14,7 @@ export const REDIS = Symbol('REDIS');
       useFactory: (config: AppConfigService, health: HealthService): Redis => {
         const client = new Redis(config.redisUrl, {
           lazyConnect: false,
-          maxRetriesPerRequest: 2,
+          maxRetriesPerRequest: null,
           enableReadyCheck: true,
         });
         health.register('redis', async () => {
@@ -29,10 +29,7 @@ export const REDIS = Symbol('REDIS');
   exports: [REDIS],
 })
 export class RedisModule implements OnModuleDestroy {
-  constructor(private readonly moduleRef?: unknown) {}
-
   async onModuleDestroy(): Promise<void> {
-    // Close via DI to avoid holding a private reference.
-    // Individual consumers can also `.quit()` if they want graceful shutdown.
+    // Consumers can .quit() if they want graceful shutdown.
   }
 }

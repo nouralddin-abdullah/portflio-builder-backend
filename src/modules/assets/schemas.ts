@@ -1,10 +1,21 @@
 import { z } from 'zod';
 import { ZodDto } from '../../common/pipes/zod-validation.pipe';
 
-export const MIME_WHITELIST = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
+export const MIME_WHITELIST = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'application/pdf',
+] as const;
 export type AllowedMime = (typeof MIME_WHITELIST)[number];
 
-export const MAX_ASSET_BYTES = 8 * 1024 * 1024; // 8 MiB
+export const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
+export function isImageMime(mime: string): boolean {
+  return (IMAGE_MIMES as readonly string[]).includes(mime);
+}
+
+export const MAX_ASSET_BYTES = 10 * 1024 * 1024; // 10 MiB
 
 export const signSchema = z
   .object({

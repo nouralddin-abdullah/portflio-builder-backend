@@ -172,40 +172,53 @@ describe('PortfoliosService', () => {
     });
   });
 
+  const heroBody = (headline = 'Hello world') => ({
+    headline,
+    subheadline: 'Subtitle',
+    availability: 'available' as const,
+  });
+  const aboutBody = (body = 'My story') => ({
+    body,
+    skills: [],
+    resumeUrl: '',
+  });
+
   describe('upsertSection', () => {
     it('rejects unknown section kinds', async () => {
       const { svc } = build();
       await expect(
-        svc.upsertSection('u1', 'sidebar', { title: 'x' }),
+        svc.upsertSection('u1', 'sidebar', heroBody()),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('validates hero body against the zod schema', async () => {
       const { svc } = build();
       await expect(
-        svc.upsertSection('u1', 'hero', { subtitle: 'no title' }),
+        svc.upsertSection('u1', 'hero', { subheadline: 'no headline' }),
       ).rejects.toBeInstanceOf(UnprocessableEntityException);
     });
 
     it('writes a valid hero into draft', async () => {
       const { svc } = build();
-      const out = await svc.upsertSection('u1', 'hero', { title: 'Hello world' });
-      expect(out.draft.hero?.title).toBe('Hello world');
+      const out = await svc.upsertSection('u1', 'hero', heroBody('Hello world'));
+      expect(out.draft.hero?.headline).toBe('Hello world');
     });
 
     it('re-parses the full draft after merging', async () => {
       const { svc, portfolios } = build();
-      await svc.upsertSection('u1', 'hero', { title: 'A' });
-      await svc.upsertSection('u1', 'about', { body: 'My story' });
+      await svc.upsertSection('u1', 'hero', heroBody('A and B'));
+      await svc.upsertSection('u1', 'about', aboutBody('My story'));
       const [p] = Array.from(portfolios.rows.values());
-      expect(p?.draft).toEqual({ hero: { title: 'A' }, about: { body: 'My story' } });
+      const draft = p?.draft as { hero?: { headline?: string }; about?: { body?: string } } | undefined;
+      expect(draft?.hero?.headline).toBe('A and B');
+      expect(draft?.about?.body).toBe('My story');
     });
   });
 
   describe('deleteSection', () => {
     it('removes the key from draft', async () => {
       const { svc } = build();
-      await svc.upsertSection('u1', 'hero', { title: 'X' });
+      await svc.upsertSection('u1', 'hero', heroBody('X and Y'));
       const out = await svc.deleteSection('u1', 'hero');
       expect(out.draft.hero).toBeUndefined();
     });
@@ -215,16 +228,16 @@ describe('PortfoliosService', () => {
     it('refuses to publish when an enabled section is missing from the draft', async () => {
       const { svc } = build();
       await svc.updateSettings('u1', { enabledSections: ['hero', 'about'] });
-      await svc.upsertSection('u1', 'hero', { title: 'Hi' });
+      await svc.upsertSection('u1', 'hero', heroBody('Hi there'));
       await expect(svc.publish('u1')).rejects.toBeInstanceOf(UnprocessableEntityException);
     });
 
     it('promotes draft to published, writes a revision, bumps tenant, emits event', async () => {
       const { svc, revisions, tenants, emitSpy } = build();
       await svc.updateSettings('u1', { enabledSections: ['hero'] });
-      await svc.upsertSection('u1', 'hero', { title: 'Hi' });
+      await svc.upsertSection('u1', 'hero', heroBody('Hi there'));
       const out = await svc.publish('u1');
-      expect(out.published?.hero?.title).toBe('Hi');
+      expect(out.published?.hero?.headline).toBe('Hi there');
       expect(out.publishedAt).not.toBeNull();
       expect(revisions.rows.size).toBe(1);
       const tenant = Array.from(tenants.rows.values())[0];
@@ -240,7 +253,7 @@ describe('PortfoliosService', () => {
     it('clears published and archives the tenant', async () => {
       const { svc, tenants } = build();
       await svc.updateSettings('u1', { enabledSections: ['hero'] });
-      await svc.upsertSection('u1', 'hero', { title: 'Hi' });
+      await svc.upsertSection('u1', 'hero', heroBody('Hi there'));
       await svc.publish('u1');
       const out = await svc.unpublish('u1');
       expect(out.published).toBeNull();
@@ -260,17 +273,15 @@ describe('PortfoliosService', () => {
     it('restores a revision snapshot into draft without auto-publishing', async () => {
       const { svc } = build();
       await svc.updateSettings('u1', { enabledSections: ['hero'] });
-      await svc.upsertSection('u1', 'hero', { title: 'First' });
+      await svc.upsertSection('u1', 'hero', heroBody('First'));
       await svc.publish('u1');
-      // Overwrite the draft, then restore.
-      await svc.upsertSection('u1', 'hero', { title: 'Second' });
+      await svc.upsertSection('u1', 'hero', heroBody('Second'));
       const revisions = await svc.listRevisions('u1', undefined, 10);
       const revId = revisions.items[0]?.id;
       expect(revId).toBeDefined();
       const restored = await svc.restoreRevision('u1', revId!);
-      expect(restored.draft.hero?.title).toBe('First');
-      // Published stays as it was; restore does not auto-publish.
-      expect(restored.published?.hero?.title).toBe('First');
+      expect(restored.draft.hero?.headline).toBe('First');
+      expect(restored.published?.hero?.headline).toBe('First');
     });
   });
 });

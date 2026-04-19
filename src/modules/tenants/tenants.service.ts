@@ -10,12 +10,28 @@ import { Tenant } from '../../database/entities/tenant.entity';
 import { User } from '../../database/entities/user.entity';
 import { RESERVED_SUBDOMAINS } from './reserved-subdomains';
 
+export type SubdomainAvailabilityReason =
+  | 'ok'
+  | 'invalid_format'
+  | 'reserved'
+  | 'taken'
+  | 'empty';
+
+export interface SubdomainAvailability {
+  readonly value: string;
+  readonly available: boolean;
+  readonly reason: SubdomainAvailabilityReason;
+}
+
+const SUBDOMAIN_RE = /^(?!-)(?!.*--)[a-z0-9-]{3,32}(?<!-)$/;
+
 export interface TenantWithOwner {
   id: string;
   ownerId: string;
   subdomain: string;
   customDomain: string | null;
   status: Tenant['status'];
+  onboardedAt: string | null;
   createdAt: string;
   updatedAt: string;
   owner: { id: string; email: string; name: string };
@@ -67,6 +83,7 @@ export class TenantsService {
       subdomain,
       customDomain: null,
       status: 'draft',
+      onboardedAt: null,
     });
     try {
       await this.tenants.save(row);
@@ -104,6 +121,7 @@ export class TenantsService {
     }
 
     tenant.subdomain = subdomain;
+    if (!tenant.onboardedAt) tenant.onboardedAt = new Date();
     try {
       await this.tenants.save(tenant);
     } catch {
@@ -113,6 +131,34 @@ export class TenantsService {
       });
     }
     return this.hydrate(tenant);
+  }
+
+  /**
+   * Tells the frontend whether a subdomain can be claimed by this user.
+   * Treats the caller's own current subdomain as available so the onboarding
+   * step can show a green tick on re-visits.
+   */
+  async checkSubdomainAvailability(
+    userId: string,
+    raw: string,
+  ): Promise<SubdomainAvailability> {
+    const value = raw.trim().toLowerCase();
+    if (value.length === 0) {
+      return { value, available: false, reason: 'empty' };
+    }
+    if (!SUBDOMAIN_RE.test(value)) {
+      return { value, available: false, reason: 'invalid_format' };
+    }
+    if (RESERVED_SUBDOMAINS.has(value)) {
+      return { value, available: false, reason: 'reserved' };
+    }
+    const own = await this.tenants.findOne({ where: { ownerId: userId } });
+    if (own && own.subdomain === value) {
+      return { value, available: true, reason: 'ok' };
+    }
+    const taken = await this.tenants.exist({ where: { subdomain: value } });
+    if (taken) return { value, available: false, reason: 'taken' };
+    return { value, available: true, reason: 'ok' };
   }
 
   private async getOrCreateOwnRow(userId: string): Promise<Tenant> {
@@ -155,6 +201,7 @@ export class TenantsService {
       subdomain: tenant.subdomain,
       customDomain: tenant.customDomain,
       status: tenant.status,
+      onboardedAt: tenant.onboardedAt ? tenant.onboardedAt.toISOString() : null,
       createdAt: tenant.createdAt.toISOString(),
       updatedAt: tenant.updatedAt.toISOString(),
       owner: { id: owner.id, email: owner.email, name: owner.name },

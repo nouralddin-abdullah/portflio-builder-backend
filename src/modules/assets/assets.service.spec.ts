@@ -209,7 +209,7 @@ describe('AssetsService', () => {
     });
 
     it('rejects a HEAD mime that falls outside the whitelist', async () => {
-      const { svc } = build({ head: { size: 1024, mime: 'application/pdf', exists: true } });
+      const { svc } = build({ head: { size: 1024, mime: 'image/svg+xml', exists: true } });
       await expect(
         svc.confirm('u1', 'u/u1/p/p_1/abc.png'),
       ).rejects.toBeInstanceOf(BadRequestException);
@@ -221,6 +221,16 @@ describe('AssetsService', () => {
       expect(assets.rows.size).toBe(1);
       expect(out.mime).toBe('image/webp');
       expect(queue.enqueueProcess).toHaveBeenCalledWith({ assetId: out.id, key: 'u/u1/p/p_1/abc.png' });
+      expect(emitSpy).toHaveBeenCalledWith('asset.uploaded', { assetId: out.id });
+    });
+
+    it('skips sharp processing for non-image assets (e.g. PDF resume)', async () => {
+      const { svc, queue, emitSpy } = build({
+        head: { size: 1024, mime: 'application/pdf', exists: true },
+      });
+      const out = await svc.confirm('u1', 'u/u1/p/p_1/resume.pdf');
+      expect(out.mime).toBe('application/pdf');
+      expect(queue.enqueueProcess).not.toHaveBeenCalled();
       expect(emitSpy).toHaveBeenCalledWith('asset.uploaded', { assetId: out.id });
     });
 

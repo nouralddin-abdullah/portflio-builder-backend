@@ -40,6 +40,9 @@ export class Tenant {
   })
   status!: PublishStatus;
 
+  @Column({ name: 'onboarded_at', type: 'timestamptz', nullable: true })
+  onboardedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

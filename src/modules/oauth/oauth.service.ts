@@ -87,10 +87,32 @@ export class OAuthService {
     const profile = await PROVIDERS[provider].fetchProfile(tokens.access_token);
     const user = await this.linkOrCreate(provider, profile);
     const otc = await this.issueOneTimeCode(user.id);
-    const target = new URL(payload.returnTo || `${this.config.appOrigin}/auth/oauth-complete`);
+    const target = this.resolveReturnTarget(payload.returnTo);
     target.searchParams.set('code', otc);
     target.searchParams.set('provider', provider);
     return { redirectUrl: target.toString() };
+  }
+
+  /**
+   * Always routes through `/auth/oauth-complete` so the frontend callback page
+   * can exchange the one-time code before handing control back to the app.
+   * A sanitised `returnTo` (same-origin path) is forwarded as a secondary
+   * param that the callback page uses for its final navigation. Direct
+   * redirects to protected routes would bounce to /sign-in and burn the OTC.
+   */
+  private resolveReturnTarget(returnTo: string | undefined): URL {
+    const base = this.config.appOrigin;
+    const target = new URL('/auth/oauth-complete', base);
+    if (!returnTo) return target;
+    try {
+      const resolved = new URL(returnTo, base);
+      if (resolved.origin === new URL(base).origin) {
+        target.searchParams.set('returnTo', `${resolved.pathname}${resolved.search}`);
+      }
+    } catch {
+      // ignore malformed returnTo values; fall back to /auth/oauth-complete
+    }
+    return target;
   }
 
   async exchangeOtcForSession(
@@ -122,7 +144,7 @@ export class OAuthService {
 
   /** Resolves the redirect URI the provider will call back on. */
   callbackUri(provider: OAuthProvider): string {
-    return `${this.config.apiOrigin}/oauth/${provider}/callback`;
+    return `${this.config.apiOrigin}/api/oauth/${provider}/callback`;
   }
 
   private verifyState(rawState: string, expectedProvider: OAuthProvider) {

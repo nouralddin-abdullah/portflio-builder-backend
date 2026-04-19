@@ -4,7 +4,7 @@ import { AppConfigModule } from '../config/config.module';
 import { AppConfigService } from '../config/config.service';
 import { dataSourceOptions } from './data-source';
 import { HealthService } from '../modules/health/health.service';
-import type { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 @Global()
 @Module({

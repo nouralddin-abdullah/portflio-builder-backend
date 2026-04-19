@@ -7,7 +7,6 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
@@ -22,9 +21,9 @@
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config test/jest-e2e.config.ts --runInBand",
     "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
-    "db:migrate": "pnpm typeorm migration:run",
-    "db:migrate:revert": "pnpm typeorm migration:revert",
-    "db:migrate:gen": "pnpm typeorm migration:generate",
+    "db:migrate": "npm run typeorm -- migration:run",
+    "db:migrate:revert": "npm run typeorm -- migration:revert",
+    "db:migrate:gen": "npm run typeorm -- migration:generate",
     "db:seed": "ts-node src/database/seeds/run.ts",
     "infra:up": "docker compose -f docker-compose.dev.yml up -d",
     "infra:down": "docker compose -f docker-compose.dev.yml down",

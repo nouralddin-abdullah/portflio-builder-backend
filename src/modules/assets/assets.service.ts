@@ -13,7 +13,13 @@ import { createId } from '../../database/id';
 import { EventBus } from '../../common/events/event-bus.service';
 import { R2Service, type PresignedPut } from './r2.service';
 import { AssetsQueue } from './assets.queue';
-import { MAX_ASSET_BYTES, MIME_WHITELIST, type AllowedMime, type SignInput } from './schemas';
+import {
+  MAX_ASSET_BYTES,
+  MIME_WHITELIST,
+  isImageMime,
+  type AllowedMime,
+  type SignInput,
+} from './schemas';
 
 export interface AssetSummary {
   id: string;
@@ -32,6 +38,7 @@ const MIME_EXT: Record<AllowedMime, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
   'image/avif': 'avif',
+  'application/pdf': 'pdf',
 };
 
 @Injectable()
@@ -61,7 +68,7 @@ export class AssetsService {
     if (!(MIME_WHITELIST as readonly string[]).includes(input.mime)) {
       throw new BadRequestException({
         code: 'mime_not_allowed',
-        message: 'Only JPEG, PNG, WebP, and AVIF are accepted.',
+        message: 'Only JPEG, PNG, WebP, AVIF, and PDF are accepted.',
       });
     }
     const { portfolio } = await this.resolve(userId);
@@ -96,7 +103,7 @@ export class AssetsService {
     if (head.size > MAX_ASSET_BYTES) {
       throw new BadRequestException({
         code: 'asset_too_large',
-        message: 'Uploaded file exceeds the 8 MiB limit.',
+        message: `Uploaded file exceeds the ${Math.round(MAX_ASSET_BYTES / 1024 / 1024)} MiB limit.`,
       });
     }
 
@@ -115,7 +122,10 @@ export class AssetsService {
       derivatives: [],
     });
     await this.assets.save(asset);
-    await this.queue.enqueueProcess({ assetId: asset.id, key });
+    // Non-image assets (e.g. résumé PDFs) skip the sharp pipeline.
+    if (isImageMime(asset.mime)) {
+      await this.queue.enqueueProcess({ assetId: asset.id, key });
+    }
     this.events.emit('asset.uploaded', { assetId: asset.id });
     return this.toSummary(asset);
   }
