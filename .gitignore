@@ -12,6 +12,8 @@ coverage/
 # keys
 keys/
 *.pem
+deploy_ed25519
+deploy_ed25519.pub
 
 # tools
 .idea/
