@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 
 export const ASSETS_PROCESS_QUEUE = 'assets-process';
 export const ASSETS_PURGE_QUEUE = 'assets-purge';
@@ -27,9 +27,10 @@ export class AssetsQueue implements OnModuleDestroy {
   readonly process: Queue<AssetProcessJob>;
   readonly purge: Queue<AssetPurgeJob>;
 
-  constructor(@Inject(REDIS) private readonly redis: Redis) {
-    this.process = new Queue<AssetProcessJob>(ASSETS_PROCESS_QUEUE, { connection: redis });
-    this.purge = new Queue<AssetPurgeJob>(ASSETS_PURGE_QUEUE, { connection: redis });
+  constructor(@Inject(REDIS_BULLMQ) private readonly redis: Redis) {
+    const prefix = 'portfilo';
+    this.process = new Queue<AssetProcessJob>(ASSETS_PROCESS_QUEUE, { connection: redis, prefix });
+    this.purge = new Queue<AssetPurgeJob>(ASSETS_PURGE_QUEUE, { connection: redis, prefix });
   }
 
   async enqueueProcess(job: AssetProcessJob): Promise<void> {

@@ -12,7 +12,7 @@ import type { Redis } from 'ioredis';
 import { Inquiry } from '../../database/entities/inquiry.entity';
 import { Tenant } from '../../database/entities/tenant.entity';
 import { User } from '../../database/entities/user.entity';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 import { AppConfigService } from '../../config/config.service';
 import { MailService } from './mail.service';
 import {
@@ -34,7 +34,7 @@ export class InquiriesMailProcessor implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(Inquiry) private readonly inquiries: Repository<Inquiry>,
     @InjectRepository(Tenant) private readonly tenants: Repository<Tenant>,
     @InjectRepository(User) private readonly users: Repository<User>,
-    @Inject(REDIS) private readonly redis: Redis,
+    @Inject(REDIS_BULLMQ) private readonly redis: Redis,
     private readonly mail: MailService,
     private readonly config: AppConfigService,
   ) {}
@@ -44,7 +44,7 @@ export class InquiriesMailProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker<InquiryMailJob>(
       INQUIRY_MAIL_QUEUE,
       (job) => this.handle(job),
-      { connection: this.redis, concurrency: 5 },
+      { connection: this.redis, concurrency: 5, prefix: 'portfilo' },
     );
     this.worker.on('failed', (job, err) => {
       this.logger.error({ msg: 'inquiry_mail_failed', jobId: job?.id, err });

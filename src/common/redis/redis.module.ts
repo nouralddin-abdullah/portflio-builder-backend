@@ -5,6 +5,10 @@ import { HealthService } from '../../modules/health/health.service';
 
 export const REDIS = Symbol('REDIS');
 
+/** Separate token for BullMQ — ioredis keyPrefix is incompatible with BullMQ.
+ *  Use BullMQ's own `prefix` option on Queue/Worker instead of relying on this. */
+export const REDIS_BULLMQ = Symbol('REDIS_BULLMQ');
+
 @Global()
 @Module({
   providers: [
@@ -26,8 +30,18 @@ export const REDIS = Symbol('REDIS');
         return client;
       },
     },
+    {
+      provide: REDIS_BULLMQ,
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService): Redis =>
+        new Redis(config.redisUrl, {
+          lazyConnect: false,
+          maxRetriesPerRequest: null,
+          enableReadyCheck: false,
+        }),
+    },
   ],
-  exports: [REDIS],
+  exports: [REDIS, REDIS_BULLMQ],
 })
 export class RedisModule implements OnModuleDestroy {
   async onModuleDestroy(): Promise<void> {

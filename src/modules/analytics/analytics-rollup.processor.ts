@@ -11,7 +11,7 @@ import { Worker, type Job } from 'bullmq';
 import type { Redis } from 'ioredis';
 import { DailyStat, type TopPath } from '../../database/entities/daily-stat.entity';
 import { PageView } from '../../database/entities/page-view.entity';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 import { AppConfigService } from '../../config/config.service';
 import {
   ANALYTICS_ROLLUP_QUEUE,
@@ -35,7 +35,7 @@ export class AnalyticsRollupProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(PageView) private readonly pageViews: Repository<PageView>,
     @InjectRepository(DailyStat) private readonly dailyStats: Repository<DailyStat>,
-    @Inject(REDIS) private readonly redis: Redis,
+    @Inject(REDIS_BULLMQ) private readonly redis: Redis,
     private readonly config: AppConfigService,
     private readonly queue: AnalyticsQueue,
   ) {}
@@ -45,7 +45,7 @@ export class AnalyticsRollupProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker<AnalyticsRollupJob>(
       ANALYTICS_ROLLUP_QUEUE,
       (job) => this.handle(job),
-      { connection: this.redis, concurrency: 1 },
+      { connection: this.redis, concurrency: 1, prefix: 'portfilo' },
     );
     this.worker.on('failed', (job, err) => {
       this.logger.error({ msg: 'analytics_rollup_failed', jobId: job?.id, err });

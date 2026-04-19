@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 
 export const ACCOUNT_MAIL_QUEUE = 'account-mail';
 
@@ -23,8 +23,8 @@ export class AccountQueue implements OnModuleDestroy {
   private readonly logger = new Logger(AccountQueue.name);
   readonly mail: Queue<AccountMailJob>;
 
-  constructor(@Inject(REDIS) private readonly redis: Redis) {
-    this.mail = new Queue<AccountMailJob>(ACCOUNT_MAIL_QUEUE, { connection: redis });
+  constructor(@Inject(REDIS_BULLMQ) private readonly redis: Redis) {
+    this.mail = new Queue<AccountMailJob>(ACCOUNT_MAIL_QUEUE, { connection: redis, prefix: 'portfilo' });
   }
 
   async enqueueMail(job: AccountMailJob): Promise<void> {

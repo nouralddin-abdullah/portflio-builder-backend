@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 
 export const DOMAIN_VERIFY_QUEUE = 'domain-verify';
 
@@ -14,8 +14,8 @@ export class DomainsQueue implements OnModuleDestroy {
   private readonly logger = new Logger(DomainsQueue.name);
   readonly verify: Queue<DomainVerifyJob>;
 
-  constructor(@Inject(REDIS) private readonly redis: Redis) {
-    this.verify = new Queue<DomainVerifyJob>(DOMAIN_VERIFY_QUEUE, { connection: redis });
+  constructor(@Inject(REDIS_BULLMQ) private readonly redis: Redis) {
+    this.verify = new Queue<DomainVerifyJob>(DOMAIN_VERIFY_QUEUE, { connection: redis, prefix: 'portfilo' });
   }
 
   async enqueueVerify(job: DomainVerifyJob, delayMs = 0): Promise<void> {

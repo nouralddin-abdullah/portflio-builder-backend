@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Worker, type Job } from 'bullmq';
 import type { Redis } from 'ioredis';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 import { AppConfigService } from '../../config/config.service';
 import { MailService, type MailMessage } from '../inquiries/mail.service';
 import {
@@ -22,7 +22,7 @@ export class AccountMailProcessor implements OnModuleInit, OnModuleDestroy {
   private worker?: Worker<AccountMailJob>;
 
   constructor(
-    @Inject(REDIS) private readonly redis: Redis,
+    @Inject(REDIS_BULLMQ) private readonly redis: Redis,
     private readonly mail: MailService,
     private readonly config: AppConfigService,
   ) {}
@@ -32,7 +32,7 @@ export class AccountMailProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker<AccountMailJob>(
       ACCOUNT_MAIL_QUEUE,
       (job) => this.handle(job),
-      { connection: this.redis, concurrency: 5 },
+      { connection: this.redis, concurrency: 5, prefix: 'portfilo' },
     );
     this.worker.on('failed', (job, err) => {
       this.logger.error({ msg: 'account_mail_failed', kind: job?.data.kind, jobId: job?.id, err });

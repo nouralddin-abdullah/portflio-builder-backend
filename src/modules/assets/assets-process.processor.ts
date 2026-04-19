@@ -16,7 +16,7 @@ import {
 } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { Asset, type AssetDerivative } from '../../database/entities/asset.entity';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 import { AppConfigService } from '../../config/config.service';
 import { R2Service } from './r2.service';
 import {
@@ -43,7 +43,7 @@ export class AssetsProcessor implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @InjectRepository(Asset) private readonly assets: Repository<Asset>,
-    @Inject(REDIS) private readonly redis: Redis,
+    @Inject(REDIS_BULLMQ) private readonly redis: Redis,
     private readonly r2: R2Service,
     private readonly config: AppConfigService,
   ) {
@@ -64,12 +64,12 @@ export class AssetsProcessor implements OnModuleInit, OnModuleDestroy {
     this.processWorker = new Worker<AssetProcessJob>(
       ASSETS_PROCESS_QUEUE,
       (job) => this.handleProcess(job),
-      { connection: this.redis, concurrency: 3 },
+      { connection: this.redis, concurrency: 3, prefix: 'portfilo' },
     );
     this.purgeWorker = new Worker<AssetPurgeJob>(
       ASSETS_PURGE_QUEUE,
       (job) => this.handlePurge(job),
-      { connection: this.redis, concurrency: 5 },
+      { connection: this.redis, concurrency: 5, prefix: 'portfilo' },
     );
     for (const worker of [this.processWorker, this.purgeWorker]) {
       worker.on('failed', (job, err) => {

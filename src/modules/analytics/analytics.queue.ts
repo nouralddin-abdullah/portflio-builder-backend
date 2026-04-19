@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
 import type { Redis } from 'ioredis';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 
 export const ANALYTICS_ROLLUP_QUEUE = 'analytics-rollup';
 
@@ -16,9 +16,10 @@ export class AnalyticsQueue implements OnModuleDestroy {
   readonly rollup: Queue<AnalyticsRollupJob>;
   readonly events: QueueEvents;
 
-  constructor(@Inject(REDIS) private readonly redis: Redis) {
-    this.rollup = new Queue<AnalyticsRollupJob>(ANALYTICS_ROLLUP_QUEUE, { connection: redis });
-    this.events = new QueueEvents(ANALYTICS_ROLLUP_QUEUE, { connection: redis });
+  constructor(@Inject(REDIS_BULLMQ) private readonly redis: Redis) {
+    const prefix = 'portfilo';
+    this.rollup = new Queue<AnalyticsRollupJob>(ANALYTICS_ROLLUP_QUEUE, { connection: redis, prefix });
+    this.events = new QueueEvents(ANALYTICS_ROLLUP_QUEUE, { connection: redis, prefix });
   }
 
   async enqueue(job: AnalyticsRollupJob): Promise<void> {

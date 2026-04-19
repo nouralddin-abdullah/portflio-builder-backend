@@ -11,7 +11,7 @@ import { Worker, type Job } from 'bullmq';
 import type { Redis } from 'ioredis';
 import { DomainVerification } from '../../database/entities/domain-verification.entity';
 import { Tenant } from '../../database/entities/tenant.entity';
-import { REDIS } from '../../common/redis/redis.module';
+import { REDIS_BULLMQ } from '../../common/redis/redis.module';
 import { AppConfigService } from '../../config/config.service';
 import { DomainsService } from './domains.service';
 import {
@@ -36,7 +36,7 @@ export class DomainsVerifyProcessor implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(DomainVerification)
     private readonly verifications: Repository<DomainVerification>,
     @InjectRepository(Tenant) private readonly tenants: Repository<Tenant>,
-    @Inject(REDIS) private readonly redis: Redis,
+    @Inject(REDIS_BULLMQ) private readonly redis: Redis,
     private readonly domains: DomainsService,
     private readonly queue: DomainsQueue,
     private readonly config: AppConfigService,
@@ -47,7 +47,7 @@ export class DomainsVerifyProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker<DomainVerifyJob>(
       DOMAIN_VERIFY_QUEUE,
       (job) => this.handle(job),
-      { connection: this.redis, concurrency: 3 },
+      { connection: this.redis, concurrency: 3, prefix: 'portfilo' },
     );
     this.worker.on('failed', (job, err) => {
       this.logger.error({ msg: 'domain_verify_failed', jobId: job?.id, err });
