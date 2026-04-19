@@ -4,7 +4,8 @@
       "Bash(ssh-keygen -t ed25519 -f \"C:/Users/sadap/Documents/GitHub/portflio-builder-backend/deploy_ed25519\" -N \"\" -C \"claude-deploy\")",
       "Bash(ssh *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
