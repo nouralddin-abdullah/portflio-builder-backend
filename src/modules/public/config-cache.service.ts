@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { REDIS } from '../../common/redis/redis.module';
+import { AppConfigService } from '../../config/config.service';
 import { EventBus } from '../../common/events/event-bus.service';
 
 const CACHE_TTL_SEC = 60;
@@ -32,6 +33,7 @@ export class ConfigCacheService implements OnModuleInit {
   constructor(
     @Inject(REDIS) private readonly redis: Redis,
     private readonly events: EventBus,
+    private readonly config: AppConfigService,
   ) {}
 
   onModuleInit(): void {
@@ -61,6 +63,11 @@ export class ConfigCacheService implements OnModuleInit {
   /** Returns the Redis key that matches a raw incoming host string. */
   keyForHost(host: string): string {
     const lower = host.trim().toLowerCase();
+    const suffix = this.config.renderOriginSuffix.toLowerCase();
+    if (suffix && lower.endsWith(suffix)) {
+      const sub = lower.slice(0, -suffix.length);
+      if (sub.length > 0 && !sub.includes('.')) return this.keyForSubdomain(sub);
+    }
     return lower.includes('.') ? this.keyForDomain(lower) : this.keyForSubdomain(lower);
   }
 
