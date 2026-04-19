@@ -1,0 +1,33 @@
+[Unit]
+Description=Portfilo backend (NestJS) — api.portfilo.online
+Documentation=https://github.com/Nouralddin/portflio-builder-backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/portflio-builder-backend
+EnvironmentFile=/home/ubuntu/portflio-builder-backend/.env
+# If Node is installed via apt, /usr/bin/node works. If you use nvm, replace
+# this with the absolute path from `which node` on the ubuntu user's shell.
+ExecStart=/usr/bin/node dist/main.js
+Restart=on-failure
+RestartSec=5s
+# Give Nest a moment to flush logs and close the DB pool on stop.
+TimeoutStopSec=15s
+KillSignal=SIGTERM
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=portfilo-backend
+
+# Hardening — tight but compatible with sharp/argon2 native modules and R2/S3 calls.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/portflio-builder-backend
+
+[Install]
+WantedBy=multi-user.target

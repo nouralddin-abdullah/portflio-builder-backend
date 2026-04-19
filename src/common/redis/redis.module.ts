@@ -16,6 +16,7 @@ export const REDIS = Symbol('REDIS');
           lazyConnect: false,
           maxRetriesPerRequest: null,
           enableReadyCheck: true,
+          keyPrefix: config.redisKeyPrefix,
         });
         health.register('redis', async () => {
           const start = Date.now();

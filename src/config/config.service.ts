@@ -52,6 +52,10 @@ export class AppConfigService {
     return this.env.REDIS_URL;
   }
 
+  get redisKeyPrefix(): string {
+    return this.env.REDIS_KEY_PREFIX;
+  }
+
   get jwt(): {
     privateKeyPath: string;
     publicKeyPath: string;

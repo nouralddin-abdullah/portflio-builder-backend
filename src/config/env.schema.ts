@@ -35,6 +35,11 @@ export const envSchema = z.object({
 
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
+  /**
+   * Namespace for every Redis key this service reads/writes. Set this when sharing
+   * a Redis instance with other projects so keys don't collide.
+   */
+  REDIS_KEY_PREFIX: z.string().default('portfilo:'),
 
   JWT_PRIVATE_KEY_PATH: z.string().min(1),
   JWT_PUBLIC_KEY_PATH: z.string().min(1),
